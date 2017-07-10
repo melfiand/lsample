@@ -1,7 +1,7 @@
-CPP 	 := icpc
-CFLAGS 	 := -xhost -O3 -fPIC -prec-div -no-ftz -restrict -Wshadow
-#CPP 	 := g++
-#CFLAGS 	 := -msse2 -O3 -std=c++11 -fPIC -Drestrict="__restrict__"  -Wshadow
+#CPP 	 := icpc
+#CFLAGS 	 := -xhost -O3 -fPIC -prec-div -no-ftz -restrict -Wshadow
+CPP 	 := g++
+CFLAGS 	 := -msse2 -O3 -std=c++11 -fPIC -Drestrict="__restrict__"  -Wshadow
 
 %.s: %.cpp 
 	$(CPP) $(CFLAGS) -S $< 

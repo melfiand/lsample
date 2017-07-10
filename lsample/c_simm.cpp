@@ -111,13 +111,11 @@ double collprob_unopt(long k, long n, long N)
 
     //n*(n-1)..(n-2k+1)*(2k-1)..3.1/(2k)!/(2N)**k
     for (long i=0;i<2*k;i++) {
-	    printf("%f\n", outp);
 	    outp*=double(n-i);
 	    if (i%2==1) 
 		    outp/=double(i+1)*twon;
     }
     for (long i=n-k-1;i>0;i--){
-	    printf("%f\n", outp);
 	    outp*=1-double(i)/twon;
     }
     return outp;

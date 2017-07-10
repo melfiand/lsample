@@ -4,15 +4,20 @@
 #include <iostream>
 #include <cstdio>
 
-extern "C"
-double collprob(long k, long n, long N);
+double collprob_opt(long k, long n, long N);
+double collprob_unopt(long k, long n, long N);
+void gl_setnmax(long n);
+void gl_setN(long N);
 
 void time_collp()
 {
-	long count = 5;
-	long ks[] = {1, 2, 1, 20, 60};
-	long ns[] = {10, 10, 100, 100, 120};
+	long count = 8;
+	long ks[] = {1, 2, 1, 20, 1, 200, 1, 2000};
+	long ns[] = {10, 10, 100, 100, 1000, 1000, 10000, 10000};
+	gl_setnmax(500);	
 	long N = 1l*1000*100;
+	gl_setN(N);
+	
 	TimeStamp clk;
 	int ntrial = 100;
 	StatVector stats(ntrial);
@@ -22,7 +27,7 @@ void time_collp()
 		long n = ns[i];
 		for(long j=0; j < ntrial; j++){
 			clk.tic();
-			ans = collprob(k, n, N);
+			ans = collprob_opt(k, n, N);
 			cycles = clk.toc();
 			stats.insert(cycles);
 		}
