@@ -1,9 +1,14 @@
+CPP 	 := icpc
+CFLAGS 	 := -xhost -O3 -fPIC -prec-div -no-ftz -restrict -Wshadow
+#CPP 	 := g++
+#CFLAGS 	 := -msse2 -O3 -std=c++11 -fPIC -Drestrict="__restrict__"  -Wshadow
+
 %.s: %.cpp 
-	g++ -mavx -std=c++11 -fopenmp -fPIC -O3 -Drestrict="__restrict__" -S $< 
+	$(CPP) $(CFLAGS) -S $< 
 %.o: %.cpp
-	g++ -mavx -std=c++11 -fopenmp -fPIC -O3 -Drestrict="__restrict__" -c $<
+	$(CPP) $(CFLAGS) -c $<
 %.so: %.o
-	g++ -mavx -std=c++11 -fopenmp -shared $^ -o $@ $(LIBS)
+	$(CPP) $(CFLAGS) -shared $^ -o $@ $(LIBS)
 %.exe: %.o 
 	g++ -mavx -std=c++11 -fopenmp -o $@ $(filter %.o,$^) $(LIBS)
 

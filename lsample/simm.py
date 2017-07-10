@@ -65,7 +65,7 @@ def test_collprob():
             p *= (1-i/N)
         return 1-p
 
-    n = 23
+
     N = int(365/2)
     print('{0:>10} {1:^20} {2:^20}'.format('#persons',
                                            'shared/no triple',

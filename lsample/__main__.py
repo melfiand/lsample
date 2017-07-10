@@ -17,6 +17,5 @@ def BKSModel1():
     print('And {} coalesced with at least one triple.'.format(fail/(coal+fail)))
 
 if __name__ == '__main__':
-    simm.c_time_collp();
-    #simm.test_collprob()
+    simm.test_collprob()
     #BKSModel1()
