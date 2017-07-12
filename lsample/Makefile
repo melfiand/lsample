@@ -22,4 +22,4 @@ time_simm.o: time_simm.cpp
 time_simm.exe: time_simm.o c_simm.o
 
 clean: 
-	rm -fr *.so *.o *.pyc __pycache__
+	rm -fr *.exe *.s *.so *.o *.pyc __pycache__
