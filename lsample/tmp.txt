@@ -1,0 +1,5 @@
+1. graph and table of probabilities (for only one double and no triple) for each of four models with varying sample sizes.
+
+2. Assume fixed population size of 2N. Find n at which one double/no triple prob falls below half for the first time. Graph n vs 2N for the two cases. loglog plot.
+
+3. find a fit n = c (2N)^{d} using polyfit after taking log. 
