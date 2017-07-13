@@ -188,7 +188,7 @@ void onlydouble(long n, double* output, long* N, long maxgens, double tol)
             delete lastgen;
             delete nextgen;
             dealloc();
-            cout<<"Finished on generation "<<i<<endl;
+            //cout<<"Finished on generation "<<i<<endl;
             return;
         }
     }
@@ -237,7 +237,7 @@ void notriple(long n, double* output, long* N, long maxgens, double tol)
             delete lastgen;
             delete nextgen;
             dealloc();
-            cout<<"Finished on generation "<<i<<endl;
+            //cout<<"Finished on generation "<<i<<endl;
             return;
         }
     }
