@@ -6,6 +6,7 @@
 #include <cstdlib>
 
 #define ZERO_TOL 1e-120
+#define END_TOL 1e-4
 
 using namespace std;
 
@@ -106,6 +107,8 @@ double collprob_opt(long k, long n)
     double *restrict altby2N = gl_altby2N;
     double *restrict onemiby2N = gl_onemiby2N;
 
+    if (2*k>n) return 0;
+
     //n*(n-1)..(n-2k+1)*(2k-1)..3.1/(2k)!/(2N)**k
     for (long i=0;i<2*k;i++){
     	p *= idbl[n-i];
@@ -121,6 +124,8 @@ double collprob_unopt(long k, long n, long N)
 {
     double outp = 1;
     double twon = double(2*N);
+
+    if (2*k>n) return 0;
 
     //n*(n-1)..(n-2k+1)*(2k-1)..3.1/(2k)!/(2N)**k
     for (long i=0;i<2*k;i++) {
@@ -152,7 +157,7 @@ double collprob(long k, long n, long N)
  *tol - when (1-output[0]+output[1]) < tol, the algorithm will halt.
  */
 extern "C"
-void onlydouble(long n, double* output, long* N, long maxgens, double tol)
+void onlydouble(long n, double* output, long* N, long maxgens)
 {
     double * lastgen = new double[n+1];
     double * nextgen = new double[n+1];
@@ -182,11 +187,11 @@ void onlydouble(long n, double* output, long* N, long maxgens, double tol)
         tmp = nextgen;
         nextgen=lastgen;
         lastgen=tmp;
-        if ((1-lastgen[0]-lastgen[1])<tol){
+        if ((1-lastgen[0]-lastgen[1])<END_TOL){
             for (long j=0;j<n+1;j++)
                 output[j]=lastgen[j];
-            delete lastgen;
-            delete nextgen;
+            delete[] lastgen;
+            delete[] nextgen;
             dealloc();
             //cout<<"Finished on generation "<<i<<endl;
             return;
@@ -195,14 +200,14 @@ void onlydouble(long n, double* output, long* N, long maxgens, double tol)
     cerr<<"Did not reach tolerance"<<endl;
     for (long j=0;j<n+1;j++)
         output[j]=lastgen[j];
-    delete lastgen;
-    delete nextgen;
+    delete[] lastgen;
+    delete[] nextgen;
     dealloc();
     return;
 }
 
 extern "C"
-void notriple(long n, double* output, long* N, long maxgens, double tol)
+void notriple(long n, double* output, long* N, long maxgens)
 {
     double * lastgen = new double[n+1];
     double * nextgen = new double[n+1];
@@ -231,7 +236,7 @@ void notriple(long n, double* output, long* N, long maxgens, double tol)
         tmp = nextgen;
         nextgen=lastgen;
         lastgen=tmp;
-        if ((1-lastgen[0]-lastgen[1])<tol){
+        if ((1-lastgen[0]-lastgen[1])<END_TOL){
             for (long j=0;j<n+1;j++)
                 output[j]=lastgen[j];
             delete lastgen;
@@ -244,8 +249,8 @@ void notriple(long n, double* output, long* N, long maxgens, double tol)
     cerr<<"Did not reach tolerance"<<endl;
     for (long j=0;j<n+1;j++)
         output[j]=lastgen[j];
-    delete lastgen;
-    delete nextgen;
+    delete[] lastgen;
+    delete[] nextgen;
     dealloc();
     return;
 }

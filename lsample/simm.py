@@ -26,27 +26,27 @@ def init():
 
     c_onlydouble = c_simm.onlydouble
     c_onlydouble.restype = None
-    c_onlydouble.argtypes = [c_int64, dblptr, intptr, c_int64, c_double]
+    c_onlydouble.argtypes = [c_int64, dblptr, intptr, c_int64]
 
     c_notriple = c_simm.notriple
     c_notriple.restype = None
-    c_notriple.argtypes = [c_int64, dblptr, intptr, c_int64, c_double]
+    c_notriple.argtypes = [c_int64, dblptr, intptr, c_int64]
 
 init()
 
-def onlydouble(n,N,tol,timer=False):
+def onlydouble(n,N,timer=False):
     outpt = np.zeros(n+1,dtype=float)
     t1=time.time()
-    c_onlydouble(n,outpt,N,len(N),tol)
+    c_onlydouble(n,outpt,N,len(N))
     totaltime =time.time()-t1
     if (timer==True):
         print('Time elapsed: '+str(totaltime)+' s.')
     return outpt[1], outpt[0]
 
-def notriple(n,N,tol,timer=False):
+def notriple(n,N,timer=False):
     outpt = np.zeros(n+1,dtype=float)
     t1=time.time()
-    c_notriple(n,outpt,N,len(N),tol)
+    c_notriple(n,outpt,N,len(N))
     totaltime=time.time()-t1
     if (timer==True):
         print('Time elapsed: '+str(totaltime)+' s.')

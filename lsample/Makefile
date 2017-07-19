@@ -1,7 +1,7 @@
 #CPP 	 := icpc
 #CFLAGS 	 := -xhost -O3 -fPIC -prec-div -no-ftz -restrict -Wshadow
 CPP 	 := g++
-CFLAGS 	 := -msse2 -O3 -std=c++11 -fPIC -Drestrict="__restrict__"  -Wshadow
+CFLAGS 	 := -msse2 -O3 -std=c++11 -fPIC -Drestrict="__restrict__"  -Wshadow -Wno-unused-result
 
 %.s: %.cpp 
 	$(CPP) $(CFLAGS) -S $< 
@@ -16,7 +16,8 @@ CFLAGS 	 := -msse2 -O3 -std=c++11 -fPIC -Drestrict="__restrict__"  -Wshadow
 all: c_simm.so 
 
 c_simm.o: c_simm.cpp
-c_simm.so: c_simm.o
+pyplot.o: pyplot.cpp
+c_simm.so: c_simm.o pyplot.o
 
 time_simm.o: time_simm.cpp
 time_simm.exe: time_simm.o c_simm.o

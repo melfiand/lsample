@@ -1,6 +1,6 @@
 #ifndef assrt10july17
 #define assrt10july17
-
+#include <iostream>
 /*
  * (Based on http://stackoverflow.com/questions/5252375/custom-c-assert-macro.)
  * Like assert() in <cassert> but works outside DEBUG mode too.
