@@ -122,6 +122,12 @@ class Expdecay2:
         print('After {} gens, effpop stays at {}.'.format(self.jump2time,self.jump2pop))
 
 def one_run(n, Model):
+    """
+    n: sample size.
+    Model: instance of one of the Model classes above.
+    Prints probability of coalescing as in Kingman
+    and the probability of coalesing without triple collisions.
+    """
     N=Model.N()
     coal, fail = simm.onlydouble(n,N,timer=False)
     sccoal=coal/(coal+fail)
@@ -143,56 +149,87 @@ def one_run(n, Model):
     print('{0:7.5f} {1:7.5f}'.format(sccoal,scfail))
     print('-'*80)
 
-def multirun(Ns,Model,plot=True):
-    ns=np.asarray(Ns)
+def multirun_onlydouble(ns, Model, plot=True, ls='-o'):
+    """
+    ns: list or array of sample sizes.
+    Model: instance of one of the above models.
+    plot: True/False.
+    ls: linestyle for plot.
+    Prints or produces plot showing probability of Kingman coalescence
+    for multiple sample sizes.
+    """
+    ns=np.asarray(ns)
     N=Model.N()
-    def plotrun(title,ns,ys):
+    def plotrun(ns,ys):
+        plt.plot(ns, ys, ls, ms=5)
+        plt.ylabel('Probability of Kingman coalescence')
+        plt.xlabel('Sample Size')
+        plt.axis([0, ns.max(), 0, 1.0])
+
+    def printtable(ns,sccoal,scfail):
+        print('\n'+'-'*80)
+        print('\nCoalesced with only single double collisions:')
+        print('\n'+' '*10+'True    False')
+        for i in range(len(ns)):
+            print('n = {0:4d}  {1:7.5f} {2:7.5f}'.format(ns[i],
+                                                         sccoal[i],
+                                                         scfail[i]))
+
+    print('Computing Kingman coalescence probabilities ...')
+    sccoal=np.zeros(len(ns))
+    scfail=np.zeros(len(ns))
+    for i, n in enumerate(ns):
+        coal,fail = simm.onlydouble(n, N)
+        sccoal[i]=coal/(coal+fail)
+        scfail[i]=fail/(coal+fail)
+    
+    Model.announce()
+    if (plot):
+        plotrun(ns, sccoal)
+    else:
+        printtable(ns, sccoal, scfail)
+
+def multirun_notriple(ns,Model,plot=True):
+    """
+    ns: list or array of sample sizes.
+    Model: instance of one of the above models.
+    plot: True/False.
+    Prints or produces plot showing probability of no triple coalescence
+    for multiple sample sizes.
+    """
+    ns=np.asarray(ns)
+    N=Model.N()
+    def plotrun(ns,ys):
         plt.figure()
         plt.plot(ns,ys)
-        plt.title(title)
-        plt.ylabel('True Proportion')
+        plt.plot(ns, ys, 'o', mfc='k', ms=4)
+        plt.ylabel('Probability of no triple coalescence')
         plt.xlabel('Sample Size')
         plt.show()
 
     def printtable(ns,sccoal,scfail):
+        print('\n'+'-'*80)
+        print('\nCoalesced with only no triple collisions:')
         print('\n'+' '*10+'True    False')
         for i in range(len(ns)):
-            print('n = {0:4d}  {1:7.5f} {2:7.5f}'.format(ns[i],sccoal[i],scfail[i]))
+            print('n = {0:4d}  {1:7.5f} {2:7.5f}'.format(ns[i],
+                                                         sccoal[i],
+                                                         scfail[i]))
 
+    print('Computing no triple coalescence probabilities ...')
     sccoal=np.zeros(len(ns))
     scfail=np.zeros(len(ns))
-    i=0
-    while(i<len(ns)):
-        coal,fail = simm.onlydouble(ns[i],N)
-        if (math.isnan(coal)):
-            print('doub NaN warning')
-            continue
+    for i, n in enumerate(ns):
+        coal,fail = simm.notriple(n, N)
         sccoal[i]=coal/(coal+fail)
         scfail[i]=fail/(coal+fail)
-        i+=1
     
-    print('\n'+'-'*80)
     Model.announce()
-    print('\nCoalesced with only single double collisions:')
-    printtable(ns,sccoal,scfail)
     if (plot):
-        title='Coalesced with only single double collisions.'
-        plotrun(title,ns,sccoal)
-
-    i=0
-    while(i<len(ns)):
-        coal,fail = simm.notriple(ns[i],N)
-        if (math.isnan(coal)):
-            print('trip NaN warning')
-            continue
-        sccoal[i]=coal/(coal+fail)
-        scfail[i]=fail/(coal+fail)
-        i+=1
-    print('\nCoalesced with no triple or worse collisions:')
-    printtable(ns,sccoal,scfail)
-    if (plot):
-        title='Coalesced with no triple or worse collisions.'
-        plotrun(title,ns,sccoal)
+        plotrun(ns, sccoal)
+    else:
+        printtable(ns, sccoal, scfail)
+        
 
 def nsearch_onlydouble(effpop,pval=.5):
     Nlen=10000000
@@ -233,7 +270,7 @@ def nsearch_onlydouble(effpop,pval=.5):
             else:
                 en+=stepsize
 
-def nsearch_notriple(effpop,pval=.5):
+def nsearch_notriple(effpop, pval=.5):
     Nlen=10000000
     stepsize=128
     N = np.zeros(Nlen,dtype=np.int64)
@@ -301,38 +338,52 @@ def unpickle_and_plot(filebase):
     fin.close()
 
     plt.figure()
-    plt.loglog(Ns,doub_ns)
-    plt.title('50% Threshold for various effpop size (only single)')
-    plt.ylabel('n')
-    plt.xlabel('N (effpop)')
+    plt.loglog(Ns,doub_ns,'ok', ms=5)
+    plt.axis('tight')
+    plt.ylabel('Sample Size')
+    plt.xlabel('Population Size/2')
+    ns = doub_ns
+    p = np.polyfit(np.log(Ns), np.log(ns), deg = 1)
+    print('polyfit: {0:.2f}*N**({1:.2f})'.format(np.exp(p[1]), p[0]))
+    plt.loglog(Ns,np.exp(p[1])*Ns**p[0], '--b')
     plt.show()
     
-    plt.figure()
-    plt.loglog(Ns,trip_ns)
-    plt.title('50% Threshold for various effpop size (no triple)')
-    plt.ylabel('n')
-    plt.xlabel('N (effpop)')
+    plt.loglog(Ns,trip_ns, 'ok', ms=5)
+    plt.axis('tight')
+    plt.ylabel('Sample Size')
+    plt.xlabel('Population Size/2')
+    ns = trip_ns
+    p = np.polyfit(np.log(Ns), np.log(ns), deg = 1)
+    print('polyfit: {0:.2f}*N**({1:.2f})'.format(np.exp(p[1]), p[0]))
+    plt.loglog(Ns,np.exp(p[1])*Ns**p[0], '--b')
+    plt.show()
+
+def OnlyDoubleProbVsSampleSize():
+    ns = np.arange(2, 120, 2)
+    multirun_onlydouble(ns,Model=Constpopmodel(), ls = '-o')
+    multirun_onlydouble(ns,Model=Dualbottleneck(), ls = '-*')
+    multirun_onlydouble(ns,Model=Expdecay1(), ls = '-s')
+    multirun_onlydouble(ns,Model=Expdecay2(), ls = '-^')
+    plt.legend(['const', 'bottleneck', 'exp1', 'exp2'], loc=1)
     plt.show()
 
 if __name__ == '__main__':
     #simm.test_collprob()
-    #one_run(n=100,Model=Constpopmodel())
-    #one_run(n=100,Model=Dualbottleneck())
-    #one_run(n=100,Model=Expdecay1())
-    #one_run(n=100,Model=Expdecay2())
-    """
-    ns=[]
-    for i in range(1,25):
-        ns.append(int(i*20))
-    multirun(ns,Model=Constpopmodel())
-    """
+    # one_run(n=50,Model=Constpopmodel())
+    # one_run(n=50,Model=Dualbottleneck())
+    # one_run(n=50,Model=Expdecay1())
+    # one_run(n=50,Model=Expdecay2())
+    
+    #OnlyDoubleProbVsSampleSize()
+    unpickle_and_plot('testrun')
+    
     """
     Ns=[]
     for i in range(1,20):
         Ns.append(int(5000+1000*i))
     nsearch_and_pickle(Ns,'testrun')
     """
-    unpickle_and_plot('testrun')
+    #unpickle_and_plot('testrun')
 
     #n = nsearch_onlydouble(10000)
     #n = nsearch_notriple(10000)
