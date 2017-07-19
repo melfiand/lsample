@@ -291,7 +291,7 @@ def nsearch_and_pickle(ens, filebase):
     fout.close()
 
 def unpickle_and_plot(filebase):
-    ifile=os.path.join(os.cwd(),'pickle',filebase+'.pickle')
+    ifile=os.path.join(os.getcwd(),'pickle',filebase+'.pickle')
     if not os.path.isfile(ifile):
         print(ifile)
         print('Does not appear to exist.')
@@ -326,11 +326,13 @@ if __name__ == '__main__':
         ns.append(int(i*20))
     multirun(ns,Model=Constpopmodel())
     """
+    """
     Ns=[]
     for i in range(1,20):
         Ns.append(int(5000+1000*i))
     nsearch_and_pickle(Ns,'testrun')
-    #unpickle_and_plot('testrun')
+    """
+    unpickle_and_plot('testrun')
 
     #n = nsearch_onlydouble(10000)
     #n = nsearch_notriple(10000)
