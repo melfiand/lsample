@@ -411,7 +411,7 @@ def OnlyDoubleSampleSizeVsEffpop():
     pval=.5
     start=1000
     end=100000
-    points=20
+    points=40
     Ns = np.linspace(np.log(start),np.log(end),points)
     for i in range(len(Ns)):
         Ns[i]=int(np.exp(Ns[i]))
@@ -421,7 +421,7 @@ def NoTripleSampleSizeVsEffpop():
     pval=.5
     start=1000
     end=100000
-    points=20
+    points=40
     Ns = np.linspace(np.log(start),np.log(end),points)
     for i in range(len(Ns)):
         Ns[i]=int(np.exp(Ns[i]))
