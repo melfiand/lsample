@@ -457,8 +457,8 @@ if __name__ == '__main__':
 
     #OnlyDoubleSampleSizeVsEffpop() 
     #unpickle_and_plot('doubles')
-    NoTripleSampleSizeVsEffpop()
-    #unpickle_and_plot('triples')
+    #NoTripleSampleSizeVsEffpop()
+    unpickle_and_plot('triples')
     
     #n = nsearch_onlydouble(10000)
     #n = nsearch_notriple(10000,pval=.01)
