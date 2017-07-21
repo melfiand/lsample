@@ -2,9 +2,10 @@ from . import simm
 import numpy as np
 from matplotlib import pyplot as plt
 import math
-import os
+import os,sys
 import time
 import pickle
+import multiprocessing as mp
 
 class Constpopmodel:
     def __init__(self):
@@ -45,8 +46,10 @@ class Dualbottleneck:
 
     def announce(self):
         print('Dual bottleneck model:')
-        print('From {} to {} gens, effpop = {}.'.format(self.bottletimes1[0],self.bottletimes1[1],self.bottlepop1))
-        print('From {} to {} gens, effpop = {}.'.format(self.bottletimes2[0],self.bottletimes2[1],self.bottlepop2))
+        print('From {} to {} gens, effpop = {}.'
+            .format(self.bottletimes1[0],self.bottletimes1[1],self.bottlepop1))
+        print('From {} to {} gens, effpop = {}.'
+            .format(self.bottletimes2[0],self.bottletimes2[1],self.bottlepop2))
         print('At all other times, effpop = {}.'.format(self.effpop))
 
 class Expdecay1:
@@ -77,10 +80,14 @@ class Expdecay1:
 
     def announce(self):
         print('Exponential decay model 1:')
-        print('From 0 to {} gens, effpop decays from {} to {}.'.format(self.decayendtime,self.startpop,self.mindecaypop))
-        print('From {} to {} gens, effpop = {}.'.format(self.decayendtime,self.jump1time,self.afterdecaypop))
-        print('At {} gens, effpop jumps to {}.'.format(self.jump1time,self.jump1pop))
-        print('After {} gens, effpop stays at {}.'.format(self.jump2time,self.jump2pop))
+        print('From 0 to {} gens, effpop decays from {} to {}.'
+            .format(self.decayendtime,self.startpop,self.mindecaypop))
+        print('From {} to {} gens, effpop = {}.'
+            .format(self.decayendtime,self.jump1time,self.afterdecaypop))
+        print('At {} gens, effpop jumps to {}.'
+            .format(self.jump1time,self.jump1pop))
+        print('After {} gens, effpop stays at {}.'
+            .format(self.jump2time,self.jump2pop))
 
 class Expdecay2:
     def __init__(self):
@@ -115,11 +122,17 @@ class Expdecay2:
 
     def announce(self):
         print('Exponential decay model 2:')
-        print('From 0 to {} gens, effpop decays from {} to {}.'.format(self.decay1endtime,self.startpop,self.mindecay1pop))
-        print('From {} to {} gens, effpop decays from {} to {}.'.format(self.decay1endtime,self.decay2endtime,self.mindecay1pop,self.mindecay2pop))
-        print('From {} to {} gens, effpop = {}.'.format(self.decay2endtime,self.jump1time,self.afterdecaypop))
-        print('At {} gens, effpop jumps to {}.'.format(self.jump1time,self.jump1pop))
-        print('After {} gens, effpop stays at {}.'.format(self.jump2time,self.jump2pop))
+        print('From 0 to {} gens, effpop decays from {} to {}.'
+            .format(self.decay1endtime,self.startpop,self.mindecay1pop))
+        print('From {} to {} gens, effpop decays from {} to {}.'
+            .format(self.decay1endtime,self.decay2endtime,
+                self.mindecay1pop,self.mindecay2pop))
+        print('From {} to {} gens, effpop = {}.'
+            .format(self.decay2endtime,self.jump1time,self.afterdecaypop))
+        print('At {} gens, effpop jumps to {}.'
+            .format(self.jump1time,self.jump1pop))
+        print('After {} gens, effpop stays at {}.'
+            .format(self.jump2time,self.jump2pop))
 
 def one_run(n, Model):
     """
@@ -149,7 +162,12 @@ def one_run(n, Model):
     print('{0:7.5f} {1:7.5f}'.format(sccoal,scfail))
     print('-'*80)
 
-def multirun_onlydouble(ns, Model, plot=True, ls='-o'):
+def processwrap_mr(func, args, retarr,retarr2, retloc):
+    coal,fail=func(*args)
+    retarr[retloc]=coal/(coal+fail)
+    retarr2[retloc]=fail/(coal+fail)
+
+def multirun_onlydouble(ns, Model, plot=True, ls='-o',immediateplot=False):
     """
     ns: list or array of sample sizes.
     Model: instance of one of the above models.
@@ -165,6 +183,8 @@ def multirun_onlydouble(ns, Model, plot=True, ls='-o'):
         plt.ylabel('Probability of Kingman coalescence')
         plt.xlabel('Sample Size')
         plt.axis([0, ns.max(), 0, 1.0])
+        if immediateplot:
+            plt.show()
 
     def printtable(ns,sccoal,scfail):
         print('\n'+'-'*80)
@@ -176,12 +196,17 @@ def multirun_onlydouble(ns, Model, plot=True, ls='-o'):
                                                          scfail[i]))
 
     print('Computing Kingman coalescence probabilities ...')
-    sccoal=np.zeros(len(ns))
-    scfail=np.zeros(len(ns))
-    for i, n in enumerate(ns):
-        coal,fail = simm.onlydouble(n, N)
-        sccoal[i]=coal/(coal+fail)
-        scfail[i]=fail/(coal+fail)
+    sccoal=mp.Array('d',range(len(ns)))
+    scfail=mp.Array('d',range(len(ns)))
+    processes=[mp.Process(target=processwrap_mr, 
+        args=(simm.onlydouble,(n,N),sccoal,scfail,i)) for i,n in enumerate(ns)]
+
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join()
+    sccoal=np.asarray(sccoal)
+    scfail=np.asarray(scfail)
     
     Model.announce()
     if (plot):
@@ -189,7 +214,7 @@ def multirun_onlydouble(ns, Model, plot=True, ls='-o'):
     else:
         printtable(ns, sccoal, scfail)
 
-def multirun_notriple(ns,Model,plot=True):
+def multirun_notriple(ns,Model,plot=True,ls='-o',immediateplot=False):
     """
     ns: list or array of sample sizes.
     Model: instance of one of the above models.
@@ -200,12 +225,12 @@ def multirun_notriple(ns,Model,plot=True):
     ns=np.asarray(ns)
     N=Model.N()
     def plotrun(ns,ys):
-        plt.figure()
-        plt.plot(ns,ys)
-        plt.plot(ns, ys, 'o', mfc='k', ms=4)
+        plt.plot(ns, ys, ls, ms=5)
         plt.ylabel('Probability of no triple coalescence')
         plt.xlabel('Sample Size')
-        plt.show()
+        plt.axis([0, ns.max(), 0, 1.0])
+        if immediateplot:
+            plt.show()
 
     def printtable(ns,sccoal,scfail):
         print('\n'+'-'*80)
@@ -217,12 +242,17 @@ def multirun_notriple(ns,Model,plot=True):
                                                          scfail[i]))
 
     print('Computing no triple coalescence probabilities ...')
-    sccoal=np.zeros(len(ns))
-    scfail=np.zeros(len(ns))
-    for i, n in enumerate(ns):
-        coal,fail = simm.notriple(n, N)
-        sccoal[i]=coal/(coal+fail)
-        scfail[i]=fail/(coal+fail)
+    sccoal=mp.Array('d',range(len(ns)))
+    scfail=mp.Array('d',range(len(ns)))
+    processes=[mp.Process(target=processwrap_mr, 
+        args=(simm.notriple,(n,N),sccoal,scfail,i)) for i,n in enumerate(ns)]
+
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join()
+    sccoal=np.asarray(sccoal)
+    scfail=np.asarray(scfail)
     
     Model.announce()
     if (plot):
@@ -309,22 +339,52 @@ def nsearch_notriple(effpop, pval=.5):
             else:
                 en+=stepsize
 
-def nsearch_and_pickle(ens, filebase):
+def processwrap(func, args, retarr, retloc):
+    ret=func(*args)
+    retarr[retloc]=ret
+
+def nsearch_doublelist(ens,filebase,pval=.5):
     Ns=np.asarray(ens)
-    doub_ns=np.zeros(len(Ns))
-    trip_ns=np.zeros(len(Ns))
+    ns=mp.Array('i',range(len(Ns)))
     t1=time.time()
-    for i,N in enumerate(Ns):
-        doub_ns[i]=nsearch_onlydouble(N)
-        trip_ns[i]=nsearch_notriple(N)
-    print('Time elapsed: {}'.format(time.time()-t1))
+    processes=[mp.Process(target=processwrap, 
+        args=(nsearch_onlydouble,(N,pval),ns,i)) for i,N in enumerate(Ns)]
+
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join()
+    print('Threaded runtime = {}s'.format(time.time()-t1))
+    ns=np.asarray(ns)
     cdir=os.getcwd()
     pdir=os.path.join(cdir,'pickle')
     if not os.path.isdir(pdir):
         os.mkdir(pdir)
     ofile=os.path.join(pdir,filebase+'.pickle')
     fout = open(ofile,'wb')
-    pickle.dump((Ns,doub_ns,trip_ns),fout)
+    pickle.dump((Ns,ns),fout)
+    fout.close()
+
+def nsearch_triplelist(ens,filebase,pval=.5):
+    Ns=np.asarray(ens)
+    ns=mp.Array('i',range(len(Ns)))
+    t1=time.time()
+    processes=[mp.Process(target=processwrap, 
+        args=(nsearch_notriple,(N,pval),ns,i)) for i,N in enumerate(Ns)]
+
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join()
+    print('Threaded runtime = {}s'.format(time.time()-t1))
+    ns=np.asarray(ns)
+    cdir=os.getcwd()
+    pdir=os.path.join(cdir,'pickle')
+    if not os.path.isdir(pdir):
+        os.mkdir(pdir)
+    ofile=os.path.join(pdir,filebase+'.pickle')
+    fout = open(ofile,'wb')
+    pickle.dump((Ns,ns),fout)
     fout.close()
 
 def unpickle_and_plot(filebase):
@@ -334,29 +394,38 @@ def unpickle_and_plot(filebase):
         print('Does not appear to exist.')
         return
     fin = open(ifile,'rb')
-    Ns,doub_ns,trip_ns = pickle.load(fin)
+    Ns,ns = pickle.load(fin)
     fin.close()
 
     plt.figure()
-    plt.loglog(Ns,doub_ns,'ok', ms=5)
+    plt.loglog(Ns,ns,'ok', ms=5)
     plt.axis('tight')
     plt.ylabel('Sample Size')
     plt.xlabel('Population Size/2')
-    ns = doub_ns
     p = np.polyfit(np.log(Ns), np.log(ns), deg = 1)
     print('polyfit: {0:.2f}*N**({1:.2f})'.format(np.exp(p[1]), p[0]))
     plt.loglog(Ns,np.exp(p[1])*Ns**p[0], '--b')
     plt.show()
-    
-    plt.loglog(Ns,trip_ns, 'ok', ms=5)
-    plt.axis('tight')
-    plt.ylabel('Sample Size')
-    plt.xlabel('Population Size/2')
-    ns = trip_ns
-    p = np.polyfit(np.log(Ns), np.log(ns), deg = 1)
-    print('polyfit: {0:.2f}*N**({1:.2f})'.format(np.exp(p[1]), p[0]))
-    plt.loglog(Ns,np.exp(p[1])*Ns**p[0], '--b')
-    plt.show()
+
+def OnlyDoubleSampleSizeVsEffpop():
+    pval=.5
+    start=1000
+    end=100000
+    points=20
+    Ns = np.linspace(np.log(start),np.log(end),points)
+    for i in range(len(Ns)):
+        Ns[i]=int(np.exp(Ns[i]))
+    nsearch_doublelist(Ns,'doubles',pval)
+
+def NoTripleSampleSizeVsEffpop():
+    pval=.5
+    start=1000
+    end=100000
+    points=20
+    Ns = np.linspace(np.log(start),np.log(end),points)
+    for i in range(len(Ns)):
+        Ns[i]=int(np.exp(Ns[i]))
+    nsearch_triplelist(Ns,'triples',pval)
 
 def OnlyDoubleProbVsSampleSize():
     ns = np.arange(2, 120, 2)
@@ -364,6 +433,15 @@ def OnlyDoubleProbVsSampleSize():
     multirun_onlydouble(ns,Model=Dualbottleneck(), ls = '-*')
     multirun_onlydouble(ns,Model=Expdecay1(), ls = '-s')
     multirun_onlydouble(ns,Model=Expdecay2(), ls = '-^')
+    plt.legend(['const', 'bottleneck', 'exp1', 'exp2'], loc=1)
+    plt.show()
+
+def NoTripleProbVsSampleSize():
+    ns = np.arange(10, 1000, 33)
+    multirun_notriple(ns,Model=Constpopmodel(), ls = '-o')
+    multirun_notriple(ns,Model=Dualbottleneck(), ls = '-*')
+    multirun_notriple(ns,Model=Expdecay1(), ls = '-s')
+    multirun_notriple(ns,Model=Expdecay2(), ls = '-^')
     plt.legend(['const', 'bottleneck', 'exp1', 'exp2'], loc=1)
     plt.show()
 
@@ -375,15 +453,13 @@ if __name__ == '__main__':
     # one_run(n=50,Model=Expdecay2())
     
     #OnlyDoubleProbVsSampleSize()
-    unpickle_and_plot('testrun')
-    
-    """
-    Ns=[]
-    for i in range(1,20):
-        Ns.append(int(5000+1000*i))
-    nsearch_and_pickle(Ns,'testrun')
-    """
-    #unpickle_and_plot('testrun')
+    #NoTripleProbVsSampleSize()
 
+    #OnlyDoubleSampleSizeVsEffpop() 
+    #unpickle_and_plot('doubles')
+    NoTripleSampleSizeVsEffpop()
+    #unpickle_and_plot('triples')
+    
     #n = nsearch_onlydouble(10000)
-    #n = nsearch_notriple(10000)
+    #n = nsearch_notriple(10000,pval=.01)
+    #print(n)
