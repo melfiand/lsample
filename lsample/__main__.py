@@ -29,8 +29,8 @@ class Dualbottleneck:
     def __init__(self):
         self.Nlen=10000000
         self.effpop=10000
-        self.bottlepop1=1000
-        self.bottlepop2=700
+        self.bottlepop1=500
+        self.bottlepop2=150
         self.bottletimes1=[620,720]
         self.bottletimes2=[4620,4720]
 
@@ -55,15 +55,15 @@ class Dualbottleneck:
 class Expdecay1:
     def __init__(self):
         self.Nlen=10000000
-        self.startpop=10000
+        self.startpop=35000
         self.mindecaypop=1000
-        self.afterdecaypop=3000
-        self.jump1pop=10000
-        self.jump2pop=5000
+        self.afterdecaypop=2000
+        self.jump1pop=15000
+        self.jump2pop=6500
 
         self.decayendtime=920
         self.jump1time=2000
-        self.jump2time=6000
+        self.jump2time=5900
 
     def N(self):
         decayrate=(self.mindecaypop/self.startpop)**(1/self.decayendtime)
@@ -92,17 +92,17 @@ class Expdecay1:
 class Expdecay2:
     def __init__(self):
         self.Nlen=10000000
-        self.startpop=100000
+        self.startpop=500000
         self.mindecay1pop=10000
-        self.mindecay2pop=1000
-        self.afterdecaypop=3000
-        self.jump1pop=10000
-        self.jump2pop=5000
+        self.mindecay2pop=1025
+        self.afterdecaypop=2000
+        self.jump1pop=15000
+        self.jump2pop=6500
 
-        self.decay1endtime=200
-        self.decay2endtime=900
+        self.decay1endtime=214
+        self.decay2endtime=920
         self.jump1time=2000
-        self.jump2time=6000
+        self.jump2time=5900
 
     def N(self):
         decayrate=(self.mindecay1pop/self.startpop)**(1/self.decay1endtime)
@@ -399,13 +399,44 @@ def unpickle_and_plot(filebase):
 
     plt.figure()
     plt.loglog(Ns,ns,'ok', ms=5)
-    plt.axis('tight')
+    #plt.axis('tight')
+    if (ns[0]<40):
+        plt.axis([1000,100000,10,200])
+    else:
+        plt.axis([1000,100000,90,1000])
     plt.ylabel('Sample Size')
     plt.xlabel('Population Size/2')
     p = np.polyfit(np.log(Ns), np.log(ns), deg = 1)
     print('polyfit: {0:.2f}*N**({1:.2f})'.format(np.exp(p[1]), p[0]))
     plt.loglog(Ns,np.exp(p[1])*Ns**p[0], '--b')
     plt.show()
+
+def unpickle_and_plot3d():
+    folder=os.path.join(os.getcwd(),'pickle')
+    file05=os.path.join(folder,'05doubles'+'.pickle')
+    file50=os.path.join(folder,'50doubles'+'.pickle')
+    file95=os.path.join(folder,'95doubles'+'.pickle')
+    fin=open(file05,'rb')
+    Ns,ns05=pickle.load(fin)
+    fin.close()
+    fin=open(file50,'rb')
+    Ns,ns50=pickle.load(fin)
+    fin.close()
+    fin=open(file95,'rb')
+    Ns,ns95=pickle.load(fin)
+    fin.close()
+    plt.figure()
+    plt.loglog(Ns,ns05,'or',ms=5)
+    plt.loglog(Ns,ns50,'ok',ms=5)
+    plt.loglog(Ns,ns95,'og',ms=5)
+    p=np.polyfit(np.log(Ns),np.log(ns50),deg=1)
+    plt.loglog(Ns,np.exp(p[1])*Ns**p[0],'--b')
+    plt.xlabel('Population Size/2')
+    plt.ylabel('Sample Size')
+    plt.legend(['5','50','95','fit50'], loc=0)
+    plt.axis([1000,100000,10,200])
+    plt.show()
+
 
 def OnlyDoubleSampleSizeVsEffpop():
     pval=.5
@@ -416,6 +447,18 @@ def OnlyDoubleSampleSizeVsEffpop():
     for i in range(len(Ns)):
         Ns[i]=int(np.exp(Ns[i]))
     nsearch_doublelist(Ns,'doubles',pval)
+
+def OnlyDoubleSampleSizeVsEffpopRange():
+    start=1000
+    end=100000
+    points=40
+    Ns=np.linspace(np.log(start),np.log(end),points)
+    for i in range(len(Ns)):
+        Ns[i]=int(np.exp(Ns[i]))
+    nsearch_doublelist(Ns,'05doubles',.05)
+    nsearch_doublelist(Ns,'50doubles',.50)
+    nsearch_doublelist(Ns,'95doubles',.95)
+    unpickle_and_plot3d()
 
 def NoTripleSampleSizeVsEffpop():
     pval=.5
@@ -437,12 +480,22 @@ def OnlyDoubleProbVsSampleSize():
     plt.show()
 
 def NoTripleProbVsSampleSize():
-    ns = np.arange(10, 1000, 33)
+    ns = np.arange(10, 1120, 37)
     multirun_notriple(ns,Model=Constpopmodel(), ls = '-o')
     multirun_notriple(ns,Model=Dualbottleneck(), ls = '-*')
     multirun_notriple(ns,Model=Expdecay1(), ls = '-s')
     multirun_notriple(ns,Model=Expdecay2(), ls = '-^')
     plt.legend(['const', 'bottleneck', 'exp1', 'exp2'], loc=1)
+    plt.show()
+
+def PlotModel(Model):
+    N=Model.N()
+    x=range(len(N))
+    plt.plot(x,N)
+    plt.yscale('log')
+    plt.axis([0,7000,100,1000000])
+    plt.ylabel('Effective population size (diploids)')
+    plt.xlabel('Generations')
     plt.show()
 
 if __name__ == '__main__':
@@ -452,13 +505,18 @@ if __name__ == '__main__':
     # one_run(n=50,Model=Expdecay1())
     # one_run(n=50,Model=Expdecay2())
     
+    #PlotModel(Model=Expdecay2())
+    
     #OnlyDoubleProbVsSampleSize()
     #NoTripleProbVsSampleSize()
+
+    #OnlyDoubleSampleSizeVsEffpopRange() 
+    unpickle_and_plot3d()
 
     #OnlyDoubleSampleSizeVsEffpop() 
     #unpickle_and_plot('doubles')
     #NoTripleSampleSizeVsEffpop()
-    unpickle_and_plot('triples')
+    #unpickle_and_plot('triples')
     
     #n = nsearch_onlydouble(10000)
     #n = nsearch_notriple(10000,pval=.01)
