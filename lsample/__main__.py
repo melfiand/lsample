@@ -458,7 +458,17 @@ def OnlyDoubleSampleSizeVsEffpopRange():
     nsearch_doublelist(Ns,'05doubles',.05)
     nsearch_doublelist(Ns,'50doubles',.50)
     nsearch_doublelist(Ns,'95doubles',.95)
-    unpickle_and_plot3d()
+
+def NoTripleSampleSizeVsEffpopRange():
+    start=1000
+    end=100000
+    points=40
+    Ns=np.linspace(np.log(start),np.log(end),points)
+    for i in range(len(Ns)):
+        Ns[i]=int(np.exp(Ns[i]))
+    nsearch_triplelist(Ns,'05triples',.05)
+    nsearch_triplelist(Ns,'50triples',.50)
+    nsearch_triplelist(Ns,'95triples',.95)
 
 def NoTripleSampleSizeVsEffpop():
     pval=.5
@@ -511,7 +521,9 @@ if __name__ == '__main__':
     #NoTripleProbVsSampleSize()
 
     #OnlyDoubleSampleSizeVsEffpopRange() 
-    unpickle_and_plot3d()
+    #unpickle_and_plot3d()
+    NoTripleSampleSizeVsEffpop()
+    #unpickle_and_plot3t()
 
     #OnlyDoubleSampleSizeVsEffpop() 
     #unpickle_and_plot('doubles')
