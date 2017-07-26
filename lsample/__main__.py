@@ -11,7 +11,8 @@ class Constpopmodel:
     def __init__(self):
         self.Nlen=10000000
         self.effpop=10000
-        
+        self.name='const'
+
     def set_effpop(self, effpop):
         self.effpop=effpop
 
@@ -25,6 +26,9 @@ class Constpopmodel:
         print('Constant population model:')
         print(' N = {}.'.format(self.effpop))
 
+    def Name(self):
+        return self.name
+
 class Dualbottleneck:
     def __init__(self):
         self.Nlen=10000000
@@ -33,6 +37,7 @@ class Dualbottleneck:
         self.bottlepop2=150
         self.bottletimes1=[620,720]
         self.bottletimes2=[4620,4720]
+        self.name='bottle'
 
     def N(self):
         N=np.zeros(self.Nlen,dtype=np.int64)
@@ -52,6 +57,9 @@ class Dualbottleneck:
             .format(self.bottletimes2[0],self.bottletimes2[1],self.bottlepop2))
         print('At all other times, effpop = {}.'.format(self.effpop))
 
+    def Name(self):
+        return self.name
+
 class Expdecay1:
     def __init__(self):
         self.Nlen=10000000
@@ -64,6 +72,7 @@ class Expdecay1:
         self.decayendtime=920
         self.jump1time=2000
         self.jump2time=5900
+        self.name='exp1'
 
     def N(self):
         decayrate=(self.mindecaypop/self.startpop)**(1/self.decayendtime)
@@ -88,6 +97,9 @@ class Expdecay1:
             .format(self.jump1time,self.jump1pop))
         print('After {} gens, effpop stays at {}.'
             .format(self.jump2time,self.jump2pop))
+    
+    def Name(self):
+        return self.name
 
 class Expdecay2:
     def __init__(self):
@@ -103,6 +115,7 @@ class Expdecay2:
         self.decay2endtime=920
         self.jump1time=2000
         self.jump2time=5900
+        self.name='exp2'
 
     def N(self):
         decayrate=(self.mindecay1pop/self.startpop)**(1/self.decay1endtime)
@@ -119,6 +132,9 @@ class Expdecay2:
         for i in range(self.jump2time,self.Nlen):
             N[i]=self.jump2pop
         return N
+    
+    def Name(self):
+        return self.name
 
     def announce(self):
         print('Exponential decay model 2:')
@@ -214,7 +230,7 @@ def multirun_onlydouble(ns, Model, plot=True, ls='-o',immediateplot=False):
     else:
         printtable(ns, sccoal, scfail)
 
-def multirun_notriple(ns,Model,plot=True,ls='-o',immediateplot=False):
+def multirun_notriple(ns,Model,plot=True,ls='-o',immediateplot=False,forcerun=False):
     """
     ns: list or array of sample sizes.
     Model: instance of one of the above models.
@@ -241,25 +257,38 @@ def multirun_notriple(ns,Model,plot=True,ls='-o',immediateplot=False):
                                                          sccoal[i],
                                                          scfail[i]))
 
-    print('Computing no triple coalescence probabilities ...')
-    sccoal=mp.Array('d',range(len(ns)))
-    scfail=mp.Array('d',range(len(ns)))
-    processes=[mp.Process(target=processwrap_mr, 
-        args=(simm.notriple,(n,N),sccoal,scfail,i)) for i,n in enumerate(ns)]
+    filebase=Model.Name()
+    cdir=os.getcwd()
+    pdir=os.path.join(cdir,'pickle')
+    if not os.path.isdir(pdir):
+        os.mkdir(pdir)
+    ofile=os.path.join(pdir,filebase+'_mrt.pickle')
+    if os.path.isfile(ofile) and not forcerun:
+        fin = open(ofile,'rb')
+        sccoal, scfail = pickle.load(fin)
+        fin.close()
+    else: 
+        print('Computing no triple coalescence probabilities ...')
+        sccoal=mp.Array('d',range(len(ns)))
+        scfail=mp.Array('d',range(len(ns)))
+        processes=[mp.Process(target=processwrap_mr, 
+            args=(simm.notriple,(n,N),sccoal,scfail,i)) for i,n in enumerate(ns)]
 
-    for process in processes:
-        process.start()
-    for process in processes:
-        process.join()
-    sccoal=np.asarray(sccoal)
-    scfail=np.asarray(scfail)
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join()
+        sccoal=np.asarray(sccoal)
+        scfail=np.asarray(scfail)
     
+        fout = open(ofile,'wb')
+        pickle.dump((sccoal,scfail),fout)
+        fout.close()
     Model.announce()
     if (plot):
         plotrun(ns, sccoal)
     else:
         printtable(ns, sccoal, scfail)
-        
 
 def nsearch_onlydouble(effpop,pval=.5):
     Nlen=10000000
@@ -440,10 +469,42 @@ def unpickle_and_plot3d():
     print('poly95: {0:.2f}*N**({1:.2f})'.format(np.exp(p95[1]), p95[0]))
     plt.xlabel('Population Size/2')
     plt.ylabel('Sample Size')
-    plt.legend(['5','50','95','fit50'], loc=0)
+    plt.legend(['5%','50%','95%'], loc=0)
     plt.axis([1000,100000,10,200])
     plt.show()
 
+def unpickle_and_plot3t():
+    folder=os.path.join(os.getcwd(),'pickle')
+    file05=os.path.join(folder,'05triples'+'.pickle')
+    file50=os.path.join(folder,'50triples'+'.pickle')
+    file95=os.path.join(folder,'95triples'+'.pickle')
+    fin=open(file05,'rb')
+    Ns,ns05=pickle.load(fin)
+    fin.close()
+    fin=open(file50,'rb')
+    Ns,ns50=pickle.load(fin)
+    fin.close()
+    fin=open(file95,'rb')
+    Ns,ns95=pickle.load(fin)
+    fin.close()
+    plt.figure()
+    plt.loglog(Ns,ns05,'or',ms=5)
+    plt.loglog(Ns,ns50,'ok',ms=5)
+    plt.loglog(Ns,ns95,'og',ms=5)
+    p05=np.polyfit(np.log(Ns),np.log(ns05),deg=1)
+    p50=np.polyfit(np.log(Ns),np.log(ns50),deg=1)
+    p95=np.polyfit(np.log(Ns),np.log(ns95),deg=1)
+    plt.loglog(Ns,np.exp(p05[1])*Ns**p05[0],'--r')
+    plt.loglog(Ns,np.exp(p50[1])*Ns**p50[0],'--k')
+    plt.loglog(Ns,np.exp(p95[1])*Ns**p95[0],'--g')
+    print('poly05: {0:.2f}*N**({1:.2f})'.format(np.exp(p05[1]), p05[0]))
+    print('poly50: {0:.2f}*N**({1:.2f})'.format(np.exp(p50[1]), p50[0]))
+    print('poly95: {0:.2f}*N**({1:.2f})'.format(np.exp(p95[1]), p95[0]))
+    plt.xlabel('Population Size/2')
+    plt.ylabel('Sample Size')
+    plt.legend(['5%','50%','95%'], loc=0)
+    plt.axis([1000,100000,10,200])
+    plt.show()
 
 def OnlyDoubleSampleSizeVsEffpop():
     pval=.5
@@ -528,8 +589,8 @@ if __name__ == '__main__':
     #NoTripleProbVsSampleSize()
 
     #OnlyDoubleSampleSizeVsEffpopRange() 
-    unpickle_and_plot3d()
-    #NoTripleSampleSizeVsEffpop()
+    #unpickle_and_plot3d()
+    #NoTripleSampleSizeVsEffpopRange()
     #unpickle_and_plot3t()
 
     #OnlyDoubleSampleSizeVsEffpop() 
