@@ -206,6 +206,46 @@ void onlydouble(long n, double* output, long* N, long maxgens)
     return;
 }
 
+/*Inputs:
+ *n - sample size
+ *output - array of doubles of size (n+1)xmaxgens
+ *N - array of diploid population sizes of length maxgens
+ *maxgens - max generations before algorithm should halt.
+ *tol - when (1-output[0]+output[1]) < tol, the algorithm will halt.
+ */
+extern "C"
+void onlydoublerec(long n, double* output, long* N, long maxgens)
+{
+    gl_setnmax(n);
+    long n1=n+1;
+    long m1=maxgens+1;
+    for (long i=0;i<n+1;i++)
+        output[i*m1]=0;
+    output[n*m1]=1;
+    for (long i=0;i<maxgens;i++) {
+        gl_setN(N[i]);
+        for (long k=1;k<n1;k++) {
+            output[k*m1+i+1]=0;
+            for (long l=k;l<k+2;l++) {
+                if (l>n) continue; // Can't get mass from lastgen[n+1]
+                if (l==1) {
+                    output[(i+1)+m1]=output[i+m1];
+                    continue;
+                }
+                if (output[i+l*m1]< ZERO_TOL &&gl_optflag) continue;
+                output[(i+1)+k*m1]+=output[i+l*m1]*collprob_opt(l-k,l);
+            }
+        }
+        output[(i+1)]=1;
+        for (long j=1;j<n+1;j++)
+            output[(i+1)]-=output[(i+1)+j*m1]; 
+        
+    }
+    cerr<<"Finished Simulation."<<endl;
+    dealloc();
+    return;
+}
+
 extern "C"
 void notriple(long n, double* output, long* N, long maxgens)
 {
@@ -251,6 +291,37 @@ void notriple(long n, double* output, long* N, long maxgens)
         output[j]=lastgen[j];
     delete[] lastgen;
     delete[] nextgen;
+    dealloc();
+    return;
+}
+
+extern "C"
+void notriplerec(long n, double* output, long* N, long maxgens)
+{
+    gl_setnmax(n);
+    long n1=n+1;
+    long m1=maxgens+1;
+    for (long i=0;i<n+1;i++)
+        output[i*m1]=0;
+    output[n*m1]=1;
+    for (long i=0;i<maxgens;i++) {
+        gl_setN(N[i]);
+        for (long k=1;k<n+1;k++) {
+            output[k*m1+i+1]=0;
+            for (long l=k;l<n+1;l++) {
+                if (l==1) {
+                    output[(i+1)+m1]=output[i+m1];
+                    continue;
+                }
+                if (output[i+l*m1]< ZERO_TOL &&gl_optflag) continue;
+                output[(i+1)+k*m1]+=output[i+l*m1]*collprob_opt(l-k,l);
+            }
+        }
+        output[i+1]=1;
+        for (long j=1;j<n+1;j++)
+            output[i+1]-=output[(i+1)+j*m1];
+    }
+    cerr<<"Finished Simulation."<<endl;
     dealloc();
     return;
 }

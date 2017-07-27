@@ -12,9 +12,11 @@ intptr = ndpointer(c_int64, flags='C_CONTIGUOUS')
 c_collprob = None
 c_onlydouble = None
 c_notriple = None
+c_onlydoublerec = None
+c_notriplerec = None
 
 def init():
-    global c_collprob, c_onlydouble, c_notriple
+    global c_collprob, c_onlydouble, c_notriple, c_onlydoublerec, c_notriplerec
 
     pth = os.path.abspath(__file__)
     fname = os.path.join(os.path.dirname(pth),'c_simm.so')
@@ -32,6 +34,14 @@ def init():
     c_notriple.restype = None
     c_notriple.argtypes = [c_int64, dblptr, intptr, c_int64]
 
+    c_onlydoublerec = c_simm.onlydoublerec
+    c_onlydoublerec.restype = None
+    c_onlydoublerec.argtypes = [c_int64, dblptr, intptr, c_int64]
+
+    c_notriplerec = c_simm.notriplerec
+    c_notriplerec.restype = None
+    c_notriplerec.argtypes = [c_int64, dblptr, intptr, c_int64]
+
 init()
 
 def onlydouble(n,N,timer=False):
@@ -43,6 +53,15 @@ def onlydouble(n,N,timer=False):
         print('Time elapsed: '+str(totaltime)+' s.')
     return outpt[1], outpt[0]
 
+def onlydoublerec(n,N,t,timer=False):
+    outpt = np.zeros((n+1,t+1),dtype=float)
+    t1=time.time()
+    c_onlydoublerec(n,outpt,N,t)
+    totaltime=time.time()-t1
+    if (timer==True):
+        print('Time elapsed: '+str(totaltime)+' s.')
+    return outpt
+
 def notriple(n,N,timer=False):
     outpt = np.zeros(n+1,dtype=float)
     t1=time.time()
@@ -52,6 +71,14 @@ def notriple(n,N,timer=False):
         print('Time elapsed: '+str(totaltime)+' s.')
     return outpt[1], outpt[0]
 
+def notriplerec(n,N,t,timer=False):
+    outpt = np.zeros((n+1,t+1),dtype=float)
+    t1=time.time()
+    c_notriplerec(n,outpt,N,t)
+    totaltime=time.time()-t1
+    if (timer==True):
+        print('Time elapsed: '+str(totaltime)+' s.')
+    return outpt
 
 def test_collprob():
     #Birthday problem

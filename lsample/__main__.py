@@ -43,7 +43,7 @@ class Dualbottleneck:
         N=np.zeros(self.Nlen,dtype=np.int64)
         for i in range(self.Nlen):
             N[i]=self.effpop
-        for i in range(self.bottletimes1[0],self.bottletimes2[1]):
+        for i in range(self.bottletimes1[0],self.bottletimes1[1]):
             N[i]=self.bottlepop1
         for i in range(self.bottletimes2[0],self.bottletimes2[1]):
             N[i]=self.bottlepop2
@@ -149,6 +149,76 @@ class Expdecay2:
             .format(self.jump1time,self.jump1pop))
         print('After {} gens, effpop stays at {}.'
             .format(self.jump2time,self.jump2pop))
+
+def heatmapd(n, Model,dbl=True):
+    if dbl:
+        con = 4.45
+        conm =2.89
+        con2 = 1.47
+        ep = .33
+        epm =.32
+        ep2=.31
+    else:
+        con =5.99
+        conm=2.98
+        con2=0.92
+        ep=.5
+        epm=.5
+        ep2=.49
+    endgen=6000
+    N=Model.N()
+    rate=np.zeros(endgen,dtype=np.float)
+    pctabovemN=np.zeros(endgen+1,dtype=np.float)
+    pctabovemm=np.zeros(endgen+1,dtype=np.float)
+    pctabovemn=np.zeros(endgen+1,dtype=np.float)
+    mN=con*N[:endgen]**ep
+    mm=conm*N[:endgen]**epm
+    mn=con2*N[:endgen]**ep2
+    x=np.asarray(range(endgen))
+    if dbl:
+        outpt = simm.onlydoublerec(n,N,endgen)
+    else:
+        outpt = simm.notriplerec(n,N,endgen)
+
+    for i in range(endgen+1):
+        #print(mN[i])
+        if i < endgen:
+            rate[i]=(outpt[0,i+1]-outpt[0][i])/(1-outpt[0][i])
+        outpt[:,i]=outpt[:,i]/(1-outpt[0,i])
+        if i<endgen and mN[i]<(n+1):
+            mni=int(mN[i])
+            #print(outpt[mni:(n+1),i])
+            pctabovemN[i]=np.sum(outpt[mni:(n+1),i])
+        if i<endgen and mn[i]<(n+1):
+            mni=int(mn[i])
+            #print(outpt[mni:(n+1),i])
+            pctabovemn[i]=np.sum(outpt[mni:(n+1),i])
+        if i<endgen and mm[i]<(n+1):
+            mni=int(mm[i])
+            #print(outpt[mni:(n+1),i])
+            pctabovemm[i]=np.sum(outpt[mni:(n+1),i])
+
+
+    outpt+=np.min(outpt[np.nonzero(outpt)])/100
+    #outpt=np.log(outpt)
+    rate=(rate/np.max(rate))
+    #print(outpt[:,1])
+    #print(outpt[:,6000])
+    f,(ax1,ax2)=plt.subplots(2,sharex=True)
+    ax1.pcolor(outpt[1:][:],cmap='gist_yarg', vmin=1e-60, vmax = .4)
+    ax1.plot(x,mN,'r-',linewidth=2)
+    ax1.plot(x,mn,'g-',linewidth=2)
+    ax1.plot(x,mm,'b-',linewidth=2)
+    ax2.plot(x,pctabovemN[:endgen]*100,'r-',linewidth=2)
+    ax2.plot(x,pctabovemn[:endgen]*100,'g-',linewidth=2)
+    ax2.plot(x,pctabovemm[:endgen]*100,'b-',linewidth=2)
+    ax2.plot(x,rate*100,'m-',linewidth=3)
+    ax1.axis([0,endgen,0,n+1])
+    ax1.legend(['95%','50%','5%'])
+    ax2.axis([0,endgen,0,100])
+    ax2.legend(['95%','50%','5%','Rel rate k-coal violation.'])
+    #plt.imshow(outpt, cmap='hot')
+    plt.show()
 
 def one_run(n, Model):
     """
@@ -579,20 +649,20 @@ def PlotModel(Model):
 
 if __name__ == '__main__':
     #simm.test_collprob()
-    # one_run(n=50,Model=Constpopmodel())
-    # one_run(n=50,Model=Dualbottleneck())
-    # one_run(n=50,Model=Expdecay1())
-    # one_run(n=50,Model=Expdecay2())
+    # one_run(n=50,Model=Constpopmodel())       #
+    # one_run(n=50,Model=Dualbottleneck())      #
+    # one_run(n=50,Model=Expdecay1())           #
+    # one_run(n=50,Model=Expdecay2())           #
     
-    #PlotModel(Model=Expdecay2())
+    #PlotModel(Model=Expdecay2())               #
     
-    OnlyDoubleProbVsSampleSize()
-    NoTripleProbVsSampleSize()
+    #OnlyDoubleProbVsSampleSize()               #
+    #NoTripleProbVsSampleSize()                 #
 
-    #OnlyDoubleSampleSizeVsEffpopRange() 
-    unpickle_and_plot3d()
-    #NoTripleSampleSizeVsEffpopRange()
-    unpickle_and_plot3t()
+    #OnlyDoubleSampleSizeVsEffpopRange()        #
+    #unpickle_and_plot3d()                      #
+    #NoTripleSampleSizeVsEffpopRange()          #
+    #unpickle_and_plot3t()                      #
 
     #OnlyDoubleSampleSizeVsEffpop() 
     #unpickle_and_plot('doubles')
@@ -602,3 +672,7 @@ if __name__ == '__main__':
     #n = nsearch_onlydouble(10000)
     #n = nsearch_notriple(10000,pval=.01)
     #print(n)
+
+    #heatmapd(100,Model=Dualbottleneck(),dbl=True)       #
+    #heatmapd(100,Model=Expdecay1())            #
+    #heatmapd(100,Model=Expdecay2(),dbl=False)            #
