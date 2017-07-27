@@ -503,7 +503,8 @@ def unpickle_and_plot3t():
     plt.xlabel('Population Size/2')
     plt.ylabel('Sample Size')
     plt.legend(['5%','50%','95%'], loc=0)
-    plt.axis([1000,100000,10,200])
+    #plt.axis('tight')
+    plt.axis([1000,100000,10,2000])
     plt.show()
 
 def OnlyDoubleSampleSizeVsEffpop():
@@ -585,13 +586,13 @@ if __name__ == '__main__':
     
     #PlotModel(Model=Expdecay2())
     
-    #OnlyDoubleProbVsSampleSize()
-    #NoTripleProbVsSampleSize()
+    OnlyDoubleProbVsSampleSize()
+    NoTripleProbVsSampleSize()
 
     #OnlyDoubleSampleSizeVsEffpopRange() 
-    #unpickle_and_plot3d()
+    unpickle_and_plot3d()
     #NoTripleSampleSizeVsEffpopRange()
-    #unpickle_and_plot3t()
+    unpickle_and_plot3t()
 
     #OnlyDoubleSampleSizeVsEffpop() 
     #unpickle_and_plot('doubles')
