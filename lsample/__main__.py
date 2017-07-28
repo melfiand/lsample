@@ -152,28 +152,28 @@ class Expdecay2:
 
 def heatmapd(n, Model,dbl=True):
     if dbl:
-        con = 4.45
-        conm =2.89
-        con2 = 1.47
-        ep = .33
-        epm =.32
-        ep2=.31
+        con1 = 4.45
+        con2 =2.89
+        con3 = 1.47
+        ep1 = .33
+        ep2 =.32
+        ep3=.31
     else:
-        con =5.99
-        conm=2.98
-        con2=0.92
-        ep=.5
-        epm=.5
-        ep2=.49
+        con1 =5.99
+        con2=2.98
+        con3=0.92
+        ep1=.5
+        ep2=.5
+        ep3=.49
     endgen=6000
     N=Model.N()
     rate=np.zeros(endgen,dtype=np.float)
-    pctabovemN=np.zeros(endgen+1,dtype=np.float)
-    pctabovemm=np.zeros(endgen+1,dtype=np.float)
-    pctabovemn=np.zeros(endgen+1,dtype=np.float)
-    mN=con*N[:endgen]**ep
-    mm=conm*N[:endgen]**epm
-    mn=con2*N[:endgen]**ep2
+    pctabovemN1=np.zeros(endgen+1,dtype=np.float)
+    pctabovemN2=np.zeros(endgen+1,dtype=np.float)
+    pctabovemN3=np.zeros(endgen+1,dtype=np.float)
+    mN1=con1*N[:endgen]**ep1
+    mN2=con2*N[:endgen]**ep2
+    mN3=con3*N[:endgen]**ep3
     x=np.asarray(range(endgen))
     if dbl:
         outpt = simm.onlydoublerec(n,N,endgen)
@@ -185,38 +185,22 @@ def heatmapd(n, Model,dbl=True):
         if i < endgen:
             rate[i]=(outpt[0,i+1]-outpt[0][i])/(1-outpt[0][i])
         outpt[:,i]=outpt[:,i]/(1-outpt[0,i])
-        if i<endgen and mN[i]<(n+1):
-            mni=int(mN[i])
-            #print(outpt[mni:(n+1),i])
-            pctabovemN[i]=np.sum(outpt[mni:(n+1),i])
-        if i<endgen and mn[i]<(n+1):
-            mni=int(mn[i])
-            #print(outpt[mni:(n+1),i])
-            pctabovemn[i]=np.sum(outpt[mni:(n+1),i])
-        if i<endgen and mm[i]<(n+1):
-            mni=int(mm[i])
-            #print(outpt[mni:(n+1),i])
-            pctabovemm[i]=np.sum(outpt[mni:(n+1),i])
 
-
-    outpt+=np.min(outpt[np.nonzero(outpt)])/100
+    #outpt+=np.min(outpt[np.nonzero(outpt)])/100
     #outpt=np.log(outpt)
-    rate=(rate/np.max(rate))
-    #print(outpt[:,1])
-    #print(outpt[:,6000])
+    #rate=(rate/np.max(rate))
     f,(ax1,ax2)=plt.subplots(2,sharex=True)
     ax1.pcolor(outpt[1:][:],cmap='gist_yarg', vmin=1e-60, vmax = .4)
-    ax1.plot(x,mN,'r-',linewidth=2)
-    ax1.plot(x,mm,'b-',linewidth=2)
-    ax1.plot(x,mn,'g-',linewidth=2)
-    ax2.plot(x,pctabovemN[:endgen]*100,'r-',linewidth=2)
-    ax2.plot(x,pctabovemm[:endgen]*100,'b-',linewidth=2)
-    ax2.plot(x,pctabovemn[:endgen]*100,'g-',linewidth=2)
+    ax1.plot(x,mN1,'r-',linewidth=2)
+    ax1.plot(x,mN2,'b-',linewidth=2)
+    ax1.plot(x,mN3,'g-',linewidth=2)
+    ax1.set_ylabel('Ancestral sample size')
     ax2.plot(x,rate*100,'m-',linewidth=3)
+    ax2.set_ylabel('Probability (percent)')
+    ax2.set_xlabel('Generations')
     ax1.axis([0,endgen,0,n+1])
     ax1.legend(['95%','50%','5%'])
-    ax2.axis([0,endgen,0,100])
-    ax2.legend(['95%','50%','5%','Rel rate'])
+    ax2.axis([0,endgen,0,100*np.max(rate)])
     #plt.imshow(outpt, cmap='hot')
     plt.show()
 
@@ -673,7 +657,7 @@ if __name__ == '__main__':
     #n = nsearch_notriple(10000,pval=.01)
     #print(n)
 
-    heatmapd(100,Model=Constpopmodel(),dbl=True)
-    #heatmapd(100,Model=Dualbottleneck(),dbl=True)       #
+    #heatmapd(100,Model=Constpopmodel(),dbl=True)
+    heatmapd(100,Model=Dualbottleneck(),dbl=False)       #
     #heatmapd(100,Model=Expdecay1(),dbl=True)            #
     #heatmapd(100,Model=Expdecay2(),dbl=True)            #
