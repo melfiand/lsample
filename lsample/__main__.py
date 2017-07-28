@@ -207,16 +207,16 @@ def heatmapd(n, Model,dbl=True):
     f,(ax1,ax2)=plt.subplots(2,sharex=True)
     ax1.pcolor(outpt[1:][:],cmap='gist_yarg', vmin=1e-60, vmax = .4)
     ax1.plot(x,mN,'r-',linewidth=2)
-    ax1.plot(x,mn,'g-',linewidth=2)
     ax1.plot(x,mm,'b-',linewidth=2)
+    ax1.plot(x,mn,'g-',linewidth=2)
     ax2.plot(x,pctabovemN[:endgen]*100,'r-',linewidth=2)
-    ax2.plot(x,pctabovemn[:endgen]*100,'g-',linewidth=2)
     ax2.plot(x,pctabovemm[:endgen]*100,'b-',linewidth=2)
+    ax2.plot(x,pctabovemn[:endgen]*100,'g-',linewidth=2)
     ax2.plot(x,rate*100,'m-',linewidth=3)
     ax1.axis([0,endgen,0,n+1])
     ax1.legend(['95%','50%','5%'])
     ax2.axis([0,endgen,0,100])
-    ax2.legend(['95%','50%','5%','Rel rate k-coal violation.'])
+    ax2.legend(['95%','50%','5%','Rel rate'])
     #plt.imshow(outpt, cmap='hot')
     plt.show()
 
@@ -673,6 +673,7 @@ if __name__ == '__main__':
     #n = nsearch_notriple(10000,pval=.01)
     #print(n)
 
+    heatmapd(100,Model=Constpopmodel(),dbl=True)
     #heatmapd(100,Model=Dualbottleneck(),dbl=True)       #
-    #heatmapd(100,Model=Expdecay1())            #
-    #heatmapd(100,Model=Expdecay2(),dbl=False)            #
+    #heatmapd(100,Model=Expdecay1(),dbl=True)            #
+    #heatmapd(100,Model=Expdecay2(),dbl=True)            #
